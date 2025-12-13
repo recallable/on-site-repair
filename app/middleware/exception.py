@@ -12,11 +12,14 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
         try:
             return await call_next(request)
         except HTTPException as e:
+            print(e)
             return JSONResponse(APIResponse.error(message=str(e.detail), code=e.status_code), status_code=e.status_code)
         except RequestValidationError as e:
+            print(e.errors())
             return JSONResponse(APIResponse.error(message="validation error", code=422, data=e.errors()),
                                 status_code=422)
         except Exception as e:
+            print(e)
             return JSONResponse(APIResponse.error(message=f"internal error:{e}", code=500), status_code=500)
 
 

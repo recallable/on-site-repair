@@ -12,8 +12,8 @@ from app.utils.response import APIResponse
 
 @router.post("/upload")
 async def upload(
-        file: UploadFile = UploadFileParam(...),
-        dto: FileUploadDTO = Depends(),
+        file: UploadFile = UploadFileParam(..., description="上传的文件"),
+        dto: FileUploadDTO = Depends(FileUploadDTO),
         session: AsyncSession = Depends(get_session),
 ):
     """

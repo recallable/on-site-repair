@@ -1,5 +1,6 @@
-from fastapi import Query
+from fastapi.temp_pydantic_v1_params import Query
 from pydantic import BaseModel
+
 
 
 class FileUploadDTO(BaseModel):

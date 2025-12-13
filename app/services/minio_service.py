@@ -1,11 +1,15 @@
-from minio import Minio
 import io
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
+from typing import Optional
+
+from minio import Minio
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import settings
 from app.crud.file import create_file
+from app.models.file import File
 from app.schemas.file import FileUploadDTO, FileVO
 
 minio_client = Minio(
@@ -103,3 +107,25 @@ async def upload_file_and_record(
         file_name=entity.file_name,
         file_path=entity.file_path
     )
+
+
+async def get_file_preview_by_id(
+        session: AsyncSession,
+        file_id: int
+) -> Optional[str]:
+    """
+    根据文件ID获取文件信息
+    :param session: 数据库会话
+    :param file_id: 文件ID
+    :return: 文件信息
+    """
+    entity = await session.get(File, file_id)
+    print(entity)
+    if entity is None:
+        return None
+    url = minio_client.presigned_get_object(
+        bucket_name="on-site-repair",
+        object_name=Optional[entity.file_path],
+        expires=timedelta(minutes=30)
+    )
+    return url
