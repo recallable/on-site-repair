@@ -8,6 +8,8 @@ from app.services.minio_service import minio_client, ensure_bucket
 from app.api.routes import api_router
 from app.api.ws.chat import register_ws
 from app.services.redis import redis_client, close as redis_close
+from app.db.init_db import init_db
+from app.middleware.exception import register_exception_middleware
 
 
 @asynccontextmanager
@@ -21,6 +23,10 @@ async def lifespan(app: FastAPI):
             await conn.execute(text("SELECT 1"))
     except Exception:
         pass
+    # try:
+    #     # await init_db(engine)
+    # except Exception:
+    #     pass
     try:
         ensure_bucket()
     except Exception:
@@ -37,6 +43,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+register_exception_middleware(app)
 register_ws(app)
 app.include_router(api_router, prefix="/api")
 

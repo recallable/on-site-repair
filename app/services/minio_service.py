@@ -2,7 +2,11 @@ from minio import Minio
 import io
 import os
 import uuid
+from datetime import datetime
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
+from app.crud.file import create_file
+from app.schemas.file import FileUploadDTO, FileVO
 
 minio_client = Minio(
     settings.minio_endpoint,
@@ -12,23 +16,90 @@ minio_client = Minio(
 )
 
 
-def ensure_bucket():
-    exists = minio_client.bucket_exists(settings.minio_bucket)
+def ensure_bucket(bucket: str | None = None):
+    """
+    确保存储桶存在
+    :param bucket: 存储桶名称
+    """
+    bkt = bucket or settings.minio_bucket
+    exists = minio_client.bucket_exists(bkt)
     if not exists:
-        minio_client.make_bucket(settings.minio_bucket)
+        minio_client.make_bucket(bkt)
 
 
-def _gen_object_name(filename: str, prefix: str = "") -> str:
+def _gen_object_name(filename: str
+                     ) -> str:
+    """
+    :param filename: 文件名
+    :return:        生成的对象名称
+    """
     ext = os.path.splitext(filename)[1] or ""
     name = f"{uuid.uuid4().hex}{ext}"
-    if prefix:
-        return f"{prefix.strip('/').rstrip('/')}/{name}"
-    return name
+    date_path = datetime.now().strftime("%Y/%m/%d")
+    return f"{date_path}/{name}"
 
 
-def upload_data(filename: str, data: bytes, prefix: str = "", bucket: str | None = None, content_type: str | None = None) -> dict:
-    ensure_bucket()
+def upload_data(filename: str,
+                data: bytes,
+                bucket: str | None = None,
+                content_type: str | None = None
+                ) -> dict:
+    """
+    :param filename:     文件名
+    :param data:         文件数据
+    :param bucket:       存储桶名称
+    :param content_type: 内容类型
+    :return:             包含存储桶名称和对象名称的字典
+    """
     bkt = bucket or settings.minio_bucket
-    object_name = _gen_object_name(filename, prefix)
+    ensure_bucket(bkt)
+    object_name = _gen_object_name(filename)
     minio_client.put_object(bkt, object_name, io.BytesIO(data), length=len(data), content_type=content_type)
     return {"bucket": bkt, "object_name": object_name}
+
+
+async def upload_file_and_record(
+        session: AsyncSession,
+        dto: FileUploadDTO,
+        source_file_type: str,
+        source_file_size: int,
+        source_file_name: str,
+        data: bytes
+) -> FileVO:
+    """
+    上传文件并记录到数据库
+    :param source_file_name:   源文件名
+    :param source_file_type:   源文件类型
+    :param source_file_size:   源文件大小
+    :param session: 数据库会话
+    :param dto: 文件上传DTO
+    :param data: 文件数据
+    :return: 文件VO
+    """
+
+    res = upload_data(
+        filename=source_file_name,
+        data=data,
+        bucket="on-site-repair",
+        content_type=source_file_type
+    )
+    object_name = res["object_name"]
+    base_name = os.path.basename(object_name)
+
+    entity = await create_file(
+        session,
+        uploader_id=dto.uploader_id,
+        module=dto.module,
+        source_file_name=source_file_name,
+        source_file_size=source_file_size,
+        source_file_type=source_file_type,
+        file_name=base_name,
+        file_path=object_name,
+    )
+
+    return FileVO(
+        id=entity.id,
+        bucket=res["bucket"],
+        file_name=entity.file_name,
+        file_path=entity.file_path
+    )
