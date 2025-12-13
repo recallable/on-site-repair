@@ -9,7 +9,7 @@ from app.api.ws.chat import register_ws
 from app.db.session import engine, get_session
 from app.middleware.exception import register_exception_middleware
 from app.middleware.logging import register_access_log_middleware
-from app.services.minio_service import minio_client, ensure_bucket, get_file_preview_by_id
+from app.services.minio_service import minio_client, ensure_bucket
 from app.services.redis import redis_client, close as redis_close
 
 
