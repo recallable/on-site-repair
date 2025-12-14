@@ -17,6 +17,7 @@ WHITE_LIST = [
     "/health",
     "/api/user/login",
     "/api/user/register",
+    "/api/user/send-sms",
     "/api/master/login",
     "/api/master/register",
     "/ws/chat"
