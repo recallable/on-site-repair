@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     minio_secret_key: str = "minioadmin"
     minio_secure: bool = False
     minio_bucket: str = "default"
+    secret_key: str = "your-secret-key-here"  # JWT 密钥，生产环境请修改
+    algorithm: str = "HS256"                  # JWT 算法
+    access_token_expire_minutes: int = 30     # Token 过期时间
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 

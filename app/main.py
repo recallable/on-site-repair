@@ -3,11 +3,14 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from app.api.routes import api_router
 from app.api.ws.chat import register_ws
 from app.db.session import engine, get_session
-from app.middleware.exception import register_exception_middleware
+from app.middleware.authentication import register_authentication_middleware
+from app.middleware.exception import register_exception_middleware, BusinessException
 from app.middleware.logging import register_access_log_middleware
 from app.services.minio_service import minio_client, ensure_bucket
 from app.services.redis import redis_client, close as redis_close
@@ -46,6 +49,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 register_exception_middleware(app)
 register_access_log_middleware(app)
+register_authentication_middleware(app)
 register_ws(app)
 app.include_router(api_router, prefix="/api")
 
