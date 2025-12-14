@@ -4,7 +4,6 @@ from pydantic import BaseModel
 
 
 class FileUploadDTO(BaseModel):
-    uploader_id: int = Query(..., gt=0, description="上传者ID")
     module: int = Query(..., gt=0, description="模块ID")
 
 
