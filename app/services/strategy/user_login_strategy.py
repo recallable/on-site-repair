@@ -1,3 +1,4 @@
+import hashlib
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Union
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,6 +34,7 @@ class AccountLoginStrategy(LoginStrategy):
             raise BusinessException(code=404, message="用户不存在")
         
         # TODO: 生产环境应使用哈希比对 (如 bcrypt)
+        password = hashlib.sha256(password.encode()).hexdigest()
         if user.password != password:
             raise BusinessException(code=401, message="密码错误")
             
