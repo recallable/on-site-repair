@@ -38,8 +38,12 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
             return JSONResponse(APIResponse.error(message=str(e.detail), code=e.status_code), status_code=e.status_code)
         except RequestValidationError as e:
             logger.error(e.errors())
-            return JSONResponse(APIResponse.error(message="validation error", code=422, data=e.errors()),
+            return JSONResponse(APIResponse.error(message=e.errors(), code=422),
                                 status_code=422)
+        except BusinessException as e:
+            logger.error(e.message)
+            return JSONResponse(APIResponse.error(message=e.message, code=500),
+                                status_code=500)
         except Exception as e:
             logger.error(e)
             return JSONResponse(APIResponse.error(message=f"internal error:{e}", code=500), status_code=500)
