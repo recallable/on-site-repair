@@ -4,6 +4,7 @@ from fastapi import UploadFile, File as UploadFileParam, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 import filetype
 from app.api.minio.router import router
+from app.core.deps import get_current_user_id
 from app.db.session import get_session
 from app.schemas.file import FileUploadDTO
 from app.services.minio_service import upload_file_and_record
@@ -15,9 +16,11 @@ async def upload(
         file: UploadFile = UploadFileParam(..., description="上传的文件"),
         dto: FileUploadDTO = Depends(FileUploadDTO),
         session: AsyncSession = Depends(get_session),
+        user_id: int = Depends(get_current_user_id)
 ):
     """
     上传文件
+    :param user_id: 登录用户id
     :param file: 上传的文件
     :param dto: 文件上传DTO
     :param session: 数据库会话
@@ -41,5 +44,5 @@ async def upload(
                                 detail=f"文件扩展名与实际类型不匹配: 预期 {kind.extension}, 实际 {ext}")
 
     file_type = file.filename.split('.')[-1]
-    vo = await upload_file_and_record(session, dto, file_type, file.size, file.filename, data)
+    vo = await upload_file_and_record(session, dto, user_id, file_type, file.size, file.filename, data)
     return APIResponse.success(vo)

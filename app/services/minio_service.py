@@ -65,6 +65,7 @@ def upload_data(filename: str,
 async def upload_file_and_record(
         session: AsyncSession,
         dto: FileUploadDTO,
+        user_id: int,
         source_file_type: str,
         source_file_size: int,
         source_file_name: str,
@@ -92,7 +93,7 @@ async def upload_file_and_record(
 
     entity = await create_file(
         session,
-        uploader_id=dto.uploader_id,
+        uploader_id=user_id,
         module=dto.module,
         source_file_name=source_file_name,
         source_file_size=source_file_size,
