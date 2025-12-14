@@ -41,8 +41,12 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
             return JSONResponse(APIResponse.error(message=e.message, code=e.code), status_code=200) # 业务异常通常返回 200，通过 code 区分，或者返回 400
         except RequestValidationError as e:
             logger.error(e.errors())
-            return JSONResponse(APIResponse.error(message="validation error", code=422, data=e.errors()),
+            return JSONResponse(APIResponse.error(message=e.errors(), code=422),
                                 status_code=422)
+        except BusinessException as e:
+            logger.error(e.message)
+            return JSONResponse(APIResponse.error(message=e.message, code=500),
+                                status_code=500)
         except Exception as e:
             logger.error(e)
             return JSONResponse(APIResponse.error(message=f"internal error:{e}", code=500), status_code=500)
